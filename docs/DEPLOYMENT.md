@@ -233,6 +233,8 @@ A copy-paste you can tick through per release:
       python -m interface.cli --db /tmp/smoke.db index ./docs --pos && \
       python -m interface.cli --db /tmp/smoke.db audit
 [ ] manifest.json description still true? (§8)
+[ ] LICENSE present at repo root (Obsidian store requires it)
+[ ] fresh clone builds: git clone → cd plugin && npm i && npm run build → main.js, no errors
 [ ] git tag -a v<x.y.z> && git push origin v<x.y.z>
 [ ] GitHub Release for the tag, attach main.js + manifest.json + styles.css
 [ ] (if community store) PR to obsidian-releases community-plugins.json
@@ -254,6 +256,13 @@ A copy-paste you can tick through per release:
   a mobile claim, and the bridge can't spawn Python on mobile anyway.
 - Don't bundle a Python interpreter for v1 (the store review is friendlier to
   "uses the user's PATH Python"); per-platform wheels are a future option.
+- **A repo-root `LICENSE` is required** by the Obsidian community-plugin review
+  (and by anyone reusing the code). This project is MIT; `package.json` declares
+  it and `LICENSE` is the canonical text. Keep them in agreement.
+- **No nested `.git` under `plugin/`.** An early `git init` there once made git
+  treat `plugin/` as a submodule and silently refuse to commit its files. If
+  `git add plugin/` errors with "does not have a commit checked out", that's it —
+  `rm -rf plugin/.git`.
 - **`manifest.json`'s `description` is the plugin browser's copy** — it is the
   only thing most people read before installing. Keep it about what the plugin
   *does for them* ("find the notes that should link"), not about the pipeline,

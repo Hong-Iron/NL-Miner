@@ -227,6 +227,8 @@ BRAT도 `main.js` + `manifest.json` + `styles.css` 애셋이 똑같이 필요합
       python -m interface.cli --db /tmp/smoke.db index ./docs --pos && \
       python -m interface.cli --db /tmp/smoke.db audit
 [ ] manifest.json description이 사실인지 확인 (§8)
+[ ] 레포 루트에 LICENSE 존재 (옵시디언 스토어 필수)
+[ ] 깨끗한 clone에서 빌드됨: git clone → cd plugin && npm i && npm run build → main.js, 에러 없음
 [ ] git tag -a v<x.y.z> && git push origin v<x.y.z>
 [ ] 태그로 GitHub Release, main.js + manifest.json + styles.css 첨부
 [ ] (커뮤니티 스토어면) obsidian-releases community-plugins.json에 PR
@@ -248,6 +250,12 @@ BRAT도 `main.js` + `manifest.json` + `styles.css` 애셋이 똑같이 필요합
   거부하고, 애초에 모바일에서 파이썬 자식 프로세스를 못 띄웁니다.
 - v1에서는 **파이썬 인터프리터를 번들하지 마세요** (스토어 리뷰는 "사용자 PATH의
   파이썬을 쓴다"에 더 우호적입니다). 플랫폼별 wheel은 나중 선택지.
+- **레포 루트 `LICENSE`가 필수**입니다 (옵시디언 커뮤니티 플러그인 리뷰가 요구,
+  코드 재사용자도 필요). 이 프로젝트는 MIT — `package.json`이 선언하고 `LICENSE`가
+  정본 텍스트입니다. 둘을 일치시키세요.
+- **`plugin/` 아래 중첩된 `.git` 금지.** 예전 `git init`이 거기 남으면 git이
+  `plugin/`을 submodule로 취급해 파일 커밋을 조용히 거부합니다. `git add plugin/`이
+  "does not have a commit checked out"로 실패하면 그겁니다 — `rm -rf plugin/.git`.
 - **`manifest.json`의 `description`은 플러그인 브라우저에 나가는 홍보 문구입니다** —
   대부분의 사람이 설치 전에 읽는 유일한 문장입니다. 파이프라인이 아니라 **사용자에게
   뭘 해주는지**("링크되어야 할 노트를 찾아준다")를 쓰고, **결과를 못 내는 레이어를
