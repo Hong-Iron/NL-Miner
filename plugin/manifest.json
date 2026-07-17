@@ -1,0 +1,10 @@
+{
+  "id": "nl-miner",
+  "name": "NL-Miner",
+  "version": "0.2.0",
+  "minAppVersion": "1.4.0",
+  "description": "Find the notes that should link to each other. Indexes your vault into a block/concept graph locally (no LM, no network), suggests unlinked notes that share uncommon concepts, and audits what's orphaned. Korean and English.",
+  "author": "NL-Miner",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}

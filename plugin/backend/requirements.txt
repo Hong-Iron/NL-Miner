@@ -1,0 +1,8 @@
+# The only external dependency.
+#
+# Pinned to v2: payload.py calls model_dump_json / model_validate_json, which
+# are v2 API — an unpinned `pydantic` lets pip resolve v1 on an older
+# environment and the failure is an AttributeError deep in serialisation, not
+# anything that names the real problem. <3 because a major bump has broken this
+# API before.
+pydantic>=2.0,<3.0

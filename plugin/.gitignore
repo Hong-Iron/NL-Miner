@@ -1,0 +1,11 @@
+# Build tooling (esbuild bundles into main.js; none of this ships as source)
+node_modules/
+main.js
+build/
+*.log
+
+# Vendored Python backend transient state (the backend/ tree itself IS committed
+# so the plugin is self-contained; only ignore its caches/venvs)
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.venv/

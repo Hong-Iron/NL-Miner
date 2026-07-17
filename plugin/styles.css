@@ -1,0 +1,444 @@
+/* NL-Miner Obsidian plugin styles. */
+
+/* ---- graph view (document outline) -------------------------------------- */
+.nl-miner-graph {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.nl-miner-graph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+.nl-miner-graph svg.dragging { cursor: grabbing; }
+
+/* containment rails — the outline's indent guides */
+.nl-miner-graph .nl-rail {
+  stroke: var(--background-modifier-border);
+  stroke-width: 1px;
+}
+
+/* section boxes — the note's shape, one box per heading */
+.nl-miner-graph .nl-box {
+  fill: var(--background-secondary);
+  stroke: var(--background-modifier-border);
+  stroke-width: 1px;
+}
+.nl-miner-graph .nl-section-box.selected .nl-box {
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5px;
+}
+.nl-miner-graph .nl-box-rule {
+  stroke: var(--background-modifier-border);
+  stroke-width: 1px;
+}
+.nl-miner-graph .nl-box-title {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text-normal);
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-graph .nl-box-level {
+  font-size: 8px;
+  fill: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-graph .nl-box-prose {
+  font-size: 10px;
+  fill: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-graph .nl-dot { fill: var(--text-muted); stroke: none; }
+.nl-miner-graph .nl-dot.prose { fill: var(--text-accent); }
+.nl-miner-graph .nl-hit-row { cursor: pointer; }
+.nl-miner-graph .nl-hit { fill: transparent; }
+.nl-miner-graph .nl-hit-row:hover .nl-hit { fill: var(--background-modifier-hover); }
+
+/* satellites — quotes/code/lists/tables, kept individual and findable */
+.nl-miner-graph .nl-sat { cursor: pointer; }
+.nl-miner-graph .nl-sat .nl-pill {
+  fill: var(--background-primary);
+  stroke: var(--background-modifier-border);
+}
+.nl-miner-graph .nl-sat:hover .nl-pill { fill: var(--background-modifier-hover); }
+.nl-miner-graph .nl-sat.selected .nl-pill {
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5px;
+}
+/* each non-prose kind gets its own accent, so a glance says "that's the quote" */
+.nl-miner-graph .nl-sat.quote .nl-pill { stroke: var(--text-accent); }
+.nl-miner-graph .nl-sat.code .nl-pill { stroke: var(--text-muted); stroke-dasharray: 2 2; }
+.nl-miner-graph .nl-link.sat { stroke: var(--background-modifier-border); stroke-opacity: 1; }
+
+/* detail region (selected block's parse) */
+.nl-miner-graph .nl-link {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-opacity: 0.4;
+  stroke-width: 1px;
+}
+.nl-miner-graph .nl-link.contains { stroke-dasharray: 3 3; stroke-opacity: 0.6; }
+.nl-miner-graph .nl-link.head { stroke: var(--text-accent); stroke-opacity: 0.55; }
+.nl-miner-graph .nl-link.dep {
+  stroke: var(--interactive-accent);
+  stroke-opacity: 0.65;
+}
+.nl-miner-graph .nl-pill {
+  fill: var(--background-modifier-hover);
+  stroke: var(--background-modifier-border);
+  stroke-width: 1px;
+}
+.nl-miner-graph .nl-pill-text {
+  font-size: 9px;
+  fill: var(--text-normal);
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-graph .nl-token-text {
+  font-size: 10px;
+  fill: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+.nl-miner-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 2;
+  background: var(--background-primary);
+  padding: 2px 4px;
+  border-radius: 6px;
+  /* these views live in the right sidebar, which is narrow — wrap rather than
+     spill over the graph */
+  flex-wrap: wrap;
+  max-width: calc(100% - 16px);
+  justify-content: flex-end;
+}
+.nl-miner-toolbar button { white-space: nowrap; }
+.nl-miner-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  padding: 1rem;
+  text-align: center;
+  white-space: pre-line;
+}
+
+/* ---- query panel -------------------------------------------------------- */
+.nl-miner-query { padding: 8px; font-size: var(--font-ui-small); }
+.nl-miner-query .nl-section { margin-bottom: 8px; }
+.nl-miner-query .nl-section-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-normal);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nl-miner-query .nl-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+.nl-miner-empty-text {
+  color: var(--text-muted);
+  padding: 8px;
+  white-space: pre-line;
+}
+
+/* tree */
+.nl-miner-query .nl-tree { margin-top: 6px; }
+.nl-miner-query .nl-tree-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  padding: 1px 0;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+.nl-miner-query .nl-tree-row.clickable { cursor: pointer; }
+.nl-miner-query .nl-tree-row.clickable:hover { background: var(--background-modifier-hover); }
+/* the box-drawing guide column: monospace so │ ├ └ line up across rows */
+.nl-miner-query .nl-guide {
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: pre;
+  flex: 0 0 auto;
+  user-select: none;
+}
+.nl-miner-query .nl-tree-body {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.nl-miner-query .nl-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  border-radius: 4px;
+  padding: 0 4px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.nl-miner-query .nl-label {
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.nl-miner-query .nl-note {
+  font-size: 10px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.nl-miner-query .nl-tree-row.nl-block .nl-label { color: var(--text-normal); }
+.nl-miner-query .nl-tree-row.nl-block.heading .nl-label { font-weight: 600; }
+.nl-miner-query .nl-tree-row.nl-block.open {
+  background: var(--background-modifier-hover);
+}
+.nl-miner-query .nl-tree-row.nl-block.open .nl-tag {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+.nl-miner-query .nl-tree-row.nl-group .nl-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.nl-miner-query .nl-tree-row.nl-leaf .nl-label { color: var(--text-normal); }
+.nl-miner-query .nl-tree-row.nl-leaf.muted .nl-label { color: var(--text-faint); }
+.nl-miner-query .nl-tree-row.nl-leaf.dep .nl-label {
+  font-family: var(--font-monospace);
+  font-size: 11px;
+}
+.nl-miner-query .nl-tree-row.nl-leaf.nb .nl-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---- vault graph (hierarchical, scoped) -------------------------------- */
+.nl-miner-vault {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.nl-miner-vault svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+.nl-miner-vault svg.dragging { cursor: grabbing; }
+.nl-miner-vault .nl-rail {
+  stroke: var(--background-modifier-border);
+  stroke-width: 1px;
+}
+.nl-vault-bar {
+  top: 8px;
+  left: 8px;
+  right: auto;
+  flex-wrap: wrap;
+  max-width: calc(100% - 16px);
+}
+.nl-vault-bar .nl-scope { font-size: 11px; max-width: 200px; }
+.nl-scope-chip { cursor: pointer; }
+.nl-miner-vault .nl-vault-row.folder { cursor: pointer; }
+.nl-miner-vault .nl-vault-row.note { cursor: pointer; }
+.nl-miner-vault .nl-hit { fill: transparent; }
+.nl-miner-vault .nl-vault-row:hover .nl-hit { fill: var(--background-modifier-hover); }
+.nl-miner-vault .nl-vault-row.selected .nl-hit {
+  fill: var(--background-modifier-hover);
+  stroke: var(--interactive-accent);
+  stroke-width: 1px;
+}
+.nl-miner-vault .nl-dot { fill: var(--text-muted); }
+.nl-miner-vault .nl-vault-row.selected .nl-dot { fill: var(--interactive-accent); }
+.nl-miner-vault .nl-folder-text {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.nl-miner-vault .nl-note-text {
+  font-size: 11px;
+  fill: var(--text-normal);
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-vault .nl-badge-text {
+  font-size: 9px;
+  fill: var(--text-faint);
+  pointer-events: none;
+  user-select: none;
+}
+.nl-miner-vault .nl-link { fill: none; stroke-width: 1px; }
+/* a real wikilink */
+.nl-miner-vault .nl-link.real {
+  stroke: var(--text-accent);
+  stroke-opacity: 0.7;
+}
+/* only a suggestion — dashed and faint so it can never read as a real link */
+.nl-miner-vault .nl-link.suggested {
+  stroke: var(--text-muted);
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 3;
+}
+
+/* ---- concept bridges + vault audit ------------------------------------- */
+.nl-bridges { border-top: 1px solid var(--background-modifier-border); padding-top: 8px; }
+.nl-bridge-row {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+.nl-bridge-row:last-child { border-bottom: none; }
+.nl-bridge-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.nl-bridge-main.clickable { cursor: pointer; }
+.nl-bridge-main.clickable:hover .nl-label { color: var(--text-accent); }
+.nl-bridge-main .nl-label.clickable { cursor: pointer; }
+.nl-bridge-main .nl-label.clickable:hover { color: var(--text-accent); }
+.nl-bridge-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 3px 0 0 2px;
+}
+.nl-bridge-link {
+  margin-top: 3px;
+  font-size: 10px;
+  padding: 1px 6px;
+}
+.nl-miner-audit { max-height: 70vh; overflow-y: auto; }
+.nl-miner-audit .nl-section { margin-bottom: 14px; }
+.nl-miner-audit .nl-section-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-normal);
+  margin-bottom: 2px;
+}
+.nl-miner-audit .nl-tree-row { padding: 2px 0; }
+.nl-miner-audit .nl-tree-row.clickable { cursor: pointer; }
+.nl-miner-audit .nl-tree-row.clickable:hover { color: var(--text-accent); }
+.nl-miner-audit .nl-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  border-radius: 4px;
+  padding: 0 4px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.nl-miner-audit .nl-label { color: var(--text-normal); }
+.nl-miner-audit .nl-note { color: var(--text-faint); font-size: 10px; }
+
+/* ---- reading-view decorations ------------------------------------------ */
+.nl-miner-chip {
+  display: inline-block;
+  font-size: 10px;
+  padding: 0 4px;
+  margin-right: 3px;
+  border-radius: 6px;
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  cursor: pointer;
+}
+.nl-miner-chip:hover { background: var(--interactive-accent); color: var(--text-on-accent); }
+.nl-miner-badge {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: 6px;
+  opacity: 0.8;
+}
+.nl-miner-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+/* a known limit, not an error — informative, not alarming */
+.nl-miner-query .nl-limit {
+  border-left: 2px solid var(--background-modifier-border);
+  padding: 4px 0 4px 8px;
+  margin-top: 6px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+/* ---- the single panel: chrome + tab bar -------------------------------- */
+.nl-miner-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+.nl-tabbar {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+}
+.nl-tabbar .nl-tab {
+  flex: 1 1 0;
+  padding: 4px 6px;
+  font-size: 11px;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.nl-tabbar .nl-tab:hover { background: var(--background-modifier-hover); }
+.nl-tabbar .nl-tab.active {
+  color: var(--text-normal);
+  font-weight: 600;
+  border-bottom: 2px solid var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+/* the body is the tab's whole world — each tab styles its own inside */
+.nl-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: auto;
+}
+/* graph tabs fill and manage their own scrolling via pan/zoom */
+.nl-panel-body > .nl-miner-graph,
+.nl-panel-body > .nl-miner-vault { overflow: hidden; }
+.nl-panel-body > .nl-miner-audit { max-height: none; padding: 8px; }
+.nl-doc-title { margin-bottom: 2px; }
+.nl-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 8px 8px 0;
+  flex-wrap: wrap;
+}
+.nl-actions button { font-size: 11px; white-space: nowrap; }

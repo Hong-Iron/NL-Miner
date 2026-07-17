@@ -1,0 +1,24 @@
+{
+  "name": "nl-miner",
+  "version": "0.1.0",
+  "description": "NL-Miner Obsidian plugin (hybrid TS shell + vendored Python backend).",
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-backend.mjs",
+    "build": "node scripts/sync-backend.mjs && node esbuild.config.mjs production",
+    "dev": "node scripts/sync-backend.mjs && node esbuild.config.mjs"
+  },
+  "keywords": [
+    "obsidian",
+    "nlp",
+    "graph",
+    "parser"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.21.0",
+    "obsidian": "^1.13.1",
+    "typescript": "^5.4.0"
+  }
+}

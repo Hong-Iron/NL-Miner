@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Outputs (Phase 1 JSONL payloads)
+payload/
+graphs/
+
+# OS
+.DS_Store
+
+# NL-Miner Obsidian plugin build outputs (bundled by esbuild, not shipped as source)
+plugin/node_modules/
+plugin/main.js
+
+# development scratch output — not part of the package
+jsondata/
+*.egg-info/
