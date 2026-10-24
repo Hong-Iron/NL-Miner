@@ -120,7 +120,8 @@ Three things make it work, and all three are necessary:
    threshold couldn't be portable across vaults.
 
 **Tuned for precision, deliberately.** On a mixed-topic fixture (biology /
-cooking / git): **100% precision, 84% recall**. The trade is intentional and
+cooking / git): **100% precision, 84% recall** (16 of the 19 same-topic pairs,
+at the default bar of 0.20). The trade is intentional and
 asymmetric — a missed suggestion is invisible, while one junk suggestion makes
 you distrust every suggestion beside it.
 
@@ -167,9 +168,19 @@ Works on a default install — no config, no extra dependency.
   token was tagged a noun, which made a rule fire between every adjacent pair —
   a Korean note produced dozens of confident-looking relations, one of them
   attached to a list bullet. Confident nonsense is worse than nothing.
-- **어미 are out of scope.** Verb endings need a real morphological analyser
-  (KoNLPy/MeCab, opt-in via `NLM_MORPH`). Korean gives reliable **noun** concepts
-  — which is what concept linking runs on — and nothing more.
+- **The copula and plural fold too.** 파장이다 → 파장, 우체국들 → 우체국. A vault
+  written in the plain ~이다 style otherwise loses half its noun occurrences.
+- **A particle must fit the noun.** Korean picks 이/가, 은/는, 을/를, 과/와 by the
+  noun's last sound, so 디스플레이 is never 디스플레 + 이 and 역효과 is never
+  역효 + 과. A short list covers the nouns no rule can save (푸리에, 해상도).
+- **Verb forms are not concepts.** 처리하는 / 전송되고 give their noun (처리,
+  전송); 보냈다, 빠르게, 이어지므로 are tagged `VV` and left out. Before this,
+  every Hangul word was a noun: on a real 60-note course folder 3,848 of 6,706
+  concepts were one-off inflections, and idf ranked exactly those first.
+- **Full 어미 analysis is still out of scope.** It needs a real morphological
+  analyser (KoNLPy/MeCab, opt-in via `NLM_MORPH`). Some forms slip through —
+  흐르는 still yields 흐르 — but they rarely reach two notes, and a concept in
+  only one note no longer counts toward a score (§4).
 
 ## 6. What it cannot do
 
@@ -179,7 +190,7 @@ Stated plainly, because a tool that hides its limits wastes your time:
   in different words will never be found. There is no model; there never will be
   one in this design.
 - **Phrase parsing is ~2% on real prose.** Treat an empty phrase list as normal.
-- **Korean verbs are not analysed.** See §5.
+- **Korean verbs are recognised, not analysed.** See §5.
 - **Notes sharing a basename across folders resolve arbitrarily.** Obsidian's
   path-proximity rule isn't modelled.
 - **Desktop only.** The plugin spawns a Python child process.
@@ -188,7 +199,7 @@ Stated plainly, because a tool that hides its limits wastes your time:
 
 The rules that produced the decisions above:
 
-1. **Measure the layer, don't trust the test suite.** "347 tests green" means the
+1. **Measure the layer, don't trust the test suite.** "424 tests green" means the
    contracts hold. It does not mean a layer is useful. The 2% number only exists
    because someone counted.
 2. **A metric that can't fire is worse than no metric.** `saved_tokens` reported
@@ -205,7 +216,7 @@ The rules that produced the decisions above:
 
 ## 8. Verification
 
-**347 tests.** The ones worth knowing about pin behaviours that would regress
+**424 tests.** The ones worth knowing about pin behaviours that would regress
 silently:
 
 | test | what it defends |
@@ -213,7 +224,7 @@ silently:
 | `test_lang_gate.py` | the EN parsers never run on non-EN text |
 | `test_honest_stats.py` | *which* number tells the truth |
 | `test_concept_relevance.py` | no suggestion crosses unrelated topics |
-| `test_adapters_ko.py` | 조사 split — and what must **not** split (`사과` is not `사`+`과`) |
+| `test_adapters_ko.py` | 조사·이다·들 split, verb forms kept out — and what must **not** split (`사과`, `디스플레이`, `시분할`) |
 | `test_lemma_concepts.py` | `octopus` must not become `octopu` |
 | `test_vault_graph.py` | links and suggestions stay disjoint |
 

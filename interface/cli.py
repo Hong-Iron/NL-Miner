@@ -38,7 +38,7 @@ _preflight()
 from src.context import process
 from src.filestructure import discover
 from src.schema import BlockKind, FileMeta
-from src.store import DEFAULT_DB, GraphStore
+from src.store import DEFAULT_DB, MIN_SCORE, GraphStore
 from observer.watchdog import Watcher
 
 PAYLOAD_DIR = Path("payload")
@@ -775,7 +775,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="minimum *informative* shared concepts (default 2); "
                          "one word is never enough evidence")
     sp.add_argument("--min-score", type=float, default=None,
-                    help="minimum relatedness, cosine 0..1 (default 0.15)")
+                    help=f"minimum relatedness, cosine 0..1 (default {MIN_SCORE})")
     sp.add_argument("--json", action="store_true", help="emit JSON instead of text")
     sp.set_defaults(func=cmd_bridge)
 

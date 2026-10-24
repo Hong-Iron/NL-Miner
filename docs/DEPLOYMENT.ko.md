@@ -113,6 +113,11 @@ pip install -r plugin/backend/requirements.txt
 토크나이저로 만든 DB에는 낡은 행이 남습니다 — lemma가 없어서 `tool`/`tools`가
 안 묶이고, 마크다운·코드 토큰은 조회 시점에만 걸러집니다. 100개 노트에 몇 초입니다.
 
+*전체 분석*은 바뀐 노트만 다시 읽습니다(수정 시각이 같으면 건너뜀). 그래서 그 낡은
+행은 그대로 남습니다. 토크나이저가 바뀐 업데이트 뒤에는(한국어 조사·이다·들 규칙이
+그랬습니다) CLI에서 `--force`로 한 번 다시 색인합니다:
+`python -m interface.cli --db <db> index <vault> --pos --force`.
+
 ---
 
 ## 3. 버전 (세 파일을 함께 올리기)
@@ -220,7 +225,7 @@ BRAT도 `main.js` + `manifest.json` + `styles.css` 애셋이 똑같이 필요합
 [ ] plugin/package.json 버전 올림 (일치)
 [ ] cd plugin && npm install && npm run build   → main.js 생성, 에러 없음
 [ ] cd plugin && npx tsc --noEmit -p tsconfig.json   → 타입 에러 없음
-[ ] .venv/bin/python -m pytest test/ -q          → 347 passed (회귀 없음)
+[ ] .venv/bin/python -m pytest test/ -q          → 424 passed (회귀 없음)
 [ ] 스모크 1 — 플러그인이 호출하는 방식 그대로 (cwd = 벤더링된 backend):
       (cd plugin/backend && python -m interface.cli view ../../octopus.md --parse --json | head -c 200)
 [ ] 스모크 2 — 연결성 경로 (--pos 필요):

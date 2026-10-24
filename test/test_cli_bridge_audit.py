@@ -26,7 +26,9 @@ def vault(tmp_path):
         "# 두족류\n두족류에는 문어와 오징어가 있다. 문어의 지능은 높다.\n",
         encoding="utf-8")
     (tmp_path / "지능.md").write_text(
-        "# 지능\n지능이 높은 동물로 문어를 꼽는다. 까마귀의 지능도 높다.\n",
+        # 오징어 is the second noun 지능 shares with 두족류. ("높다" used to be
+        # it, but a verb form is not a concept.)
+        "# 지능\n지능이 높은 동물로 문어와 오징어를 꼽는다. 까마귀의 지능도 높다.\n",
         encoding="utf-8")
     db = tmp_path / "g.db"
     return tmp_path, db

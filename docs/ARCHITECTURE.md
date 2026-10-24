@@ -250,9 +250,12 @@ stay distinct, and why 문어는/문어를 unify once 조사 are split.
   contract stability: `saved_tokens`/`ratio` and `top_canonical` both count
   byte-identical duplicate *blocks*, which real prose has none of. Use
   `token_saved`/`ratio_token` and `top_concepts`.
-- **Korean is 조사-only.** Verb/adjective endings (어미: 높고, 뛰어나다) are left
-  alone; real 어미 handling needs an opt-in morphological analyzer. Korean gives
-  reliable *noun* concepts, which is what concept linking runs on.
+- **Korean verb forms are recognised by surface rules, not analysed.**
+  `adapters_ko` splits 조사, the copula 이다 and plural 들, yields the noun of a
+  하다/되다 verb, and tags other verb forms `VV`; `GraphStore._is_content_word`
+  applies the same `looks_conjugated` test, so a store indexed before these rules
+  is filtered at query time too. Real 어미 analysis needs an opt-in
+  morphological analyzer; some 관형형 (흐르는 → 흐르) slip through.
 - **Concept folding is morphological, not semantic** — no synonyms, no spelling
   variants. It also conflates a proper noun with its common-noun homograph
   (Apple/apple), an accepted cost for *suggesting* links.
@@ -267,7 +270,7 @@ stay distinct, and why 문어는/문어를 unify once 조사 are split.
 
 ## 6. Verification surface
 
-- **27 test files, 347 passed** (`.venv/bin/python -m pytest test/ -q`): Phase 0
+- **27 test files, 424 passed** (`.venv/bin/python -m pytest test/ -q`): Phase 0
   schema, Phase 1 blocks/links/MinHash, Phase 2 CKY/arc-eager/accuracy/
   parse-linker, Phase 3 preprocess/store/watchdog/CLI, the JSON-bridge tests
   (`test_phase3_cli_json.py`, `test_cli_view_command.py`,
@@ -280,8 +283,9 @@ stay distinct, and why 문어는/문어를 unify once 조사 are split.
   - `test_honest_stats.py` — `cky_trees < parsed_sentences` on real prose, and
     `saved_tokens == 0` while `token_saved > 0`. Pins *which* number tells the
     truth.
-  - `test_adapters_ko.py` — 조사 split, and what must **not** split (`사과` is not
-    `사`+`과`).
+  - `test_adapters_ko.py` — 조사·이다·들 split, 받침 agreement, verb forms
+    kept out of concepts, and what must **not** split (`사과`, `디스플레이`,
+    `시분할`, `냉장고`).
   - `test_lemma_concepts.py` — inflection/case folding, the `-is/-us` guard
     (`octopus` must not become `octopu`), sentence-initial plurals, and that the
     sentence split never changes the token stream (node ids would move).
