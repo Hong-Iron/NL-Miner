@@ -52,7 +52,7 @@ def test_noun_ending_in_a_particle_syllable_is_left_alone():
 
 
 def test_verb_endings_are_not_particles():
-    for w in ["높고", "뛰어나다", "생물이다", "가장"]:
+    for w in ["높고", "뛰어나다", "가장"]:
         stem, josa = split_josa(w)
         assert josa is None, f"{w} is not a noun+particle; got {stem}+{josa}"
 
@@ -169,3 +169,160 @@ def test_korean_closed_class_words_are_not_concepts(word):
 def test_real_korean_nouns_survive(word):
     from src.store import GraphStore
     assert GraphStore._is_content_word(word) is True
+
+
+# --------------------------------- copula, plural, agreement, markup leftovers
+
+
+@pytest.mark.parametrize("word,stem,suffix", [
+    ("생물이다", "생물", "이다"),
+    ("파장이다", "파장", "이다"),
+    ("노드이므로", "노드", "이므로"),
+    ("조건이지만", "조건", "이지만"),
+])
+def test_copula_splits_off_the_noun(word, stem, suffix):
+    """파장이다 left whole was a concept distinct from 파장 — in a vault written
+    in the plain ~이다 style, half the noun's occurrences."""
+    assert split_josa(word) == (stem, suffix)
+
+
+def test_copula_noun_is_tagged_as_noun_not_verb():
+    """노드이므로 ends in 므로, a verb-only connective; the copula must win."""
+    pairs = [(t.text, t.pos) for t in KoreanRuleAdapter().tag("노드이므로")]
+    assert ("노드", "NN") in pairs
+
+
+@pytest.mark.parametrize("word,stem,suffix", [
+    ("우체국들", "우체국", "들"),
+    ("호스트들이", "호스트", "들이"),
+    ("agent들은", "agent", "들은"),
+])
+def test_plural_deul_folds_onto_the_noun(word, stem, suffix):
+    assert split_josa(word) == (stem, suffix)
+
+
+@pytest.mark.parametrize("word", ["그들", "만들"])
+def test_deul_is_not_cut_from_short_words(word):
+    assert split_josa(word) == (word, None)
+
+
+@pytest.mark.parametrize("word", [
+    "디스플레이", "어레이", "게이트웨이",   # 이 after a vowel is not 이 the particle
+    "역효과",                              # 과 after a vowel is not 과
+    "재평가", "전문가",                     # 가 after a consonant is not 가
+])
+def test_particle_must_agree_with_the_final_sound(word):
+    """이/은/을/과/으로 follow a 받침, 가/는/를/와 a vowel. A particle in the
+    wrong shape is part of the noun."""
+    assert split_josa(word) == (word, None)
+
+
+def test_agreeing_particles_still_split_after_loanwords():
+    assert split_josa("디스플레이가") == ("디스플레이", "가")
+    assert split_josa("전문가는") == ("전문가", "는")
+
+
+@pytest.mark.parametrize("word", ["푸리에", "해상도", "정확도", "허프만", "마이크로"])
+def test_listed_nouns_are_never_split(word):
+    """These pass the stem and agreement rules (푸리 + 에, 해상 + 도) but are
+    single nouns."""
+    assert split_josa(word) == (word, None)
+
+
+def test_listed_noun_still_sheds_a_real_particle():
+    assert split_josa("푸리에의") == ("푸리에", "의")
+
+
+@pytest.mark.parametrize("raw,noun", [
+    ("**속도**는", "속도"),
+    ('"비트"는', "비트"),
+    ("“비트”를", "비트"),
+    ("「정의」에", "정의"),
+])
+def test_markup_inside_the_word_does_not_glue_onto_the_noun(raw, noun):
+    """The adapter can only strip the ends of an 어절, so **속도**는 used to
+    leave 속도** behind once the particle came off."""
+    texts = [t.text for t in KoreanRuleAdapter().tag(raw)]
+    assert noun in texts
+    assert not any(ch in t for t in texts for ch in '*"“”「」')
+
+
+def test_middle_dot_separates_words():
+    texts = [t.text for t in KoreanRuleAdapter().tag("ACK·타임아웃·순서")]
+    assert texts == ["ACK", "타임아웃", "순서"]
+
+
+# ------------------------------------------------------------- verb forms
+
+
+@pytest.mark.parametrize("word,root,ending", [
+    ("처리하는", "처리", "하는"),
+    ("약속하지", "약속", "하지"),
+    ("분류한", "분류", "한"),
+    ("필요한", "필요", "한"),
+    ("전송되고", "전송", "되고"),
+])
+def test_hada_verbs_yield_their_noun(word, root, ending):
+    """A Sino-Korean 하다/되다 verb carries its concept in the root."""
+    pairs = [(t.text, t.pos) for t in KoreanRuleAdapter().tag(word)]
+    assert pairs == [(root, "NN"), (ending, "XSV")]
+
+
+@pytest.mark.parametrize("word", ["시분할", "무제한", "인수분해"])
+def test_nouns_ending_like_hada_forms_stay_whole(word):
+    pairs = [(t.text, t.pos) for t in KoreanRuleAdapter().tag(word)]
+    assert pairs == [(word, "NN")]
+
+
+@pytest.mark.parametrize("word", ["비슷하다", "똑똑하다", "깨끗한"])
+def test_native_adjectives_give_no_noun(word):
+    """비슷 and 똑똑 are not nouns: ㅅ 받침 and reduplication mark a native
+    root. The word is still recognised as a verb form."""
+    toks = KoreanRuleAdapter().tag(word)
+    assert all(t.pos != "NN" for t in toks)
+
+
+@pytest.mark.parametrize("word", [
+    "보냈다", "이어지므로", "빠르게", "아닌지", "보내고", "알아보다",
+    "받아들이고", "산다", "흐르며",
+])
+def test_verb_forms_are_tagged_vv(word):
+    pairs = [(t.text, t.pos) for t in KoreanRuleAdapter().tag(word)]
+    assert pairs == [(word, "VV")]
+
+
+@pytest.mark.parametrize("word,noun", [
+    ("생각보다", "생각"),       # 보다 the particle, not the verb
+    ("바다에서", "바다"),       # a noun ending in 다
+    ("냉장고가", "냉장고"),     # a noun ending in 고
+    ("메시지를", "메시지"),     # a noun ending in 지
+    ("파이프라인이", "파이프라인"),
+])
+def test_nouns_that_end_like_verbs_survive(word, noun):
+    pairs = [(t.text, t.pos) for t in KoreanRuleAdapter().tag(word)]
+    assert (noun, "NN") in pairs
+
+
+@pytest.mark.parametrize("word", [
+    "보냈다", "빠르게", "아닌지", "하는", "되어", '두는가"다',
+    "나은지는",      # a verb only once its particle is off — stored whole as VV
+    "느려지거나", "가리듯", "일부냐",
+])
+def test_verb_forms_are_not_concepts(word):
+    """The store decides on the surface form too, so a store indexed before
+    the adapter knew these is filtered the same way."""
+    from src.store import GraphStore
+    assert GraphStore._is_content_word(word) is False
+
+
+@pytest.mark.parametrize("word", ["바다", "람다", "냉장고", "메시지", "시분할", "체인지"])
+def test_nouns_shaped_like_verbs_are_concepts(word):
+    from src.store import GraphStore
+    assert GraphStore._is_content_word(word) is True
+
+
+def test_quoted_word_sheds_both_particles():
+    """\"방송부원들은\"으로 — the particle inside the quotes belongs to the word
+    as much as the one outside."""
+    texts = [t.text for t in KoreanRuleAdapter().tag('"방송부원들은"으로')]
+    assert texts[0] == "방송부원"

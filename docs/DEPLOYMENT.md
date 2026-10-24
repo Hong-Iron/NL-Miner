@@ -115,6 +115,11 @@ it, but a database built by an older tokenizer carries stale rows — no lemmas
 (so `tool`/`tools` won't fold) and markdown/code tokens that newer versions
 filter only at query time. A reindex is seconds per hundred notes.
 
+*Index vault* is incremental — it skips notes whose mtime hasn't changed — so it
+does not refresh those rows. After an upgrade that changes the tokenizer (the
+Korean 조사/이다/들 rules did), reindex once from the CLI with `--force`:
+`python -m interface.cli --db <db> index <vault> --pos --force`.
+
 ---
 
 ## 3. Versioning (keep three files in lock-step)
@@ -226,7 +231,7 @@ A copy-paste you can tick through per release:
 [ ] plugin/package.json version bumped (matches)
 [ ] cd plugin && npm install && npm run build   → main.js produced, no errors
 [ ] cd plugin && npx tsc --noEmit -p tsconfig.json   → no type errors
-[ ] .venv/bin/python -m pytest test/ -q          → 347 passed (no regression)
+[ ] .venv/bin/python -m pytest test/ -q          → 424 passed (no regression)
 [ ] manual smoke, exactly as the plugin invokes it (cwd = the vendored backend):
       (cd plugin/backend && python -m interface.cli view ../../octopus.md --parse --json | head -c 200)
 [ ] manual smoke, the connectivity path (needs --pos):

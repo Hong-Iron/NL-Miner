@@ -129,6 +129,8 @@ Build on **blocks and concepts**; treat phrases as a bonus when they appear.
 
 **Korean** works on a default install: 조사 are split so 문어는/문어가/문어를 collapse
 onto one concept, which is what lets concepts link Korean notes at all. The
+copula and plural fold the same way (파장이다, 우체국들), and verb forms
+(보냈다, 빠르게) are kept out of the concept list. The
 English-only parsers are skipped per sentence rather than guessing, so a Korean
 note yields blocks + concepts and **no** grammar — reported as `skipped_lang`,
 not silently.

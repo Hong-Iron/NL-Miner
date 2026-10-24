@@ -93,8 +93,9 @@ _CAPITALIZED_RE = re.compile(r"^[A-Z]")
 # covers markdown and wikilink syntax, which would otherwise become concepts in
 # their own right: "[[Other Note]]" yields the tokens "[[Other" and "Note]]",
 # and "**bold**" a node distinct from "bold". Only the ends are stripped, so
-# "snake_case" survives intact.
-TOKEN_STRIP = ".,;:!?\"'()[]{}*_~`#<>|«»…"
+# "snake_case" survives intact. Curly quotes and corner brackets are how Korean
+# prose often quotes a word (“비트”, 「정의」); left in, they glue onto it.
+TOKEN_STRIP = ".,;:!?\"'()[]{}*_~`#<>|«»…“”‘’「」『』"
 
 
 def _word_tokenize(text: str) -> list[str]:

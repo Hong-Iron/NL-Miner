@@ -243,8 +243,10 @@ Report these limits rather than presenting weak output as fact:
   *blocks*) and `top_canonical` (the same dup-block groups). Use `token_saved`/
   `ratio_token` and `top_concepts` instead.
 - **Concept matching folds** case and inflection (`Tools`/`tools`/`tool` are one
-  concept) and Korean 조사 (`문어는`/`문어를` → `문어`). It does **not** fold
-  synonyms or spelling variants.
+  concept) and Korean 조사, 이다 and 들 (`문어는`/`문어를` → `문어`,
+  `파장이다` → `파장`); Korean verb forms are not concepts (`처리하는` gives
+  `처리`, `보냈다` gives nothing). It does **not** fold synonyms or spelling
+  variants.
 - **`bridge`/`audit` weight by document frequency, and are tuned for precision.**
   A shared word only counts if it's rare enough in *this* vault to mean
   something; code blocks contribute nothing; two informative concepts are the

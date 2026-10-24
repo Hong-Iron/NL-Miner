@@ -11,7 +11,7 @@ store:
 - **A Claude Code skill** — an agent indexes a path once, then fetches only the
   blocks it needs (scoped queries, not whole files).
 
-**347 tests green**, and the 77-file Vault corpus indexes with 0 crashes. Read
+**424 tests green**, and the 77-file Vault corpus indexes with 0 crashes. Read
 that as "the contracts hold and nothing falls over" — not as "every layer works
 well". Those are different claims, and
 [What the layers are actually worth](#what-the-layers-are-actually-worth) gives
@@ -29,7 +29,7 @@ the measured numbers, including the one that is 2%.
 ## CLI quickstart (the bridge)
 
 ```sh
-.venv/bin/python -m pytest test/ -q                       # 347 passed
+.venv/bin/python -m pytest test/ -q                       # 424 passed
 # index a path — --pos builds the concept (token) layer; --parse adds CKY +
 # arc-eager. Note: --db goes BEFORE the subcommand.
 .venv/bin/python -m interface.cli --db /tmp/g.db index ./vault --pos --json
@@ -68,14 +68,15 @@ So a suggestion is weighted by **document frequency** (`ln(n_files / df)`):
 
 - a concept in every note scores **0** and contributes nothing;
 - past `MAX_DF_RATIO` of the vault it is dropped as vault-wide vocabulary;
-- pairs rank by **summed idf**, not overlap size — one rare term beats a dozen
+- pairs rank by **cosine over idf-weighted concepts**, not overlap size — one rare term beats a dozen
   ordinary ones;
 - **code blocks contribute no concepts**, and a concept must be a *word* (not
   `--json`, `$DEST` or `plugin/main`).
 
 This is self-calibrating, which a stoplist cannot be: the uninformative words
 aren't a fixed list, they're whatever *your* vault repeats. On a mixed-topic
-fixture (biology / cooking / git) this is **100% precision at 84% recall** — see
+fixture (biology / cooking / git) this is **100% precision at 84% recall** (16 of
+the 19 same-topic pairs) — see
 [OVERVIEW](docs/OVERVIEW.md#4-the-features-that-matter) for why that trade is the
 right way round.
 
@@ -106,9 +107,13 @@ them:
 Works on a default install, no `NLM_MORPH` needed. `AutoAdapter` routes by
 script; `src/adapters_ko.py` strips 조사 so 문어는/문어가/문어를 collapse onto one
 `(문어, NN)` node — without which cross-note concept linking cannot fire on a
-Korean vault at all. The EN-only parsers are gated off per sentence, so Korean
-yields blocks + concepts but no (fabricated) grammar. 어미 are out of scope: real
-verb morphology needs an opt-in KoNLPy/MeCab adapter.
+Korean vault at all. It also splits the copula (파장이다 → 파장) and plural 들
+(우체국들 → 우체국), checks that a particle fits the noun's last sound (so
+디스플레이 is not 디스플레 + 이), turns 하다/되다 verbs into their noun (처리하는 →
+처리), and keeps other verb forms (보냈다, 빠르게, 이어지므로) out of the concept
+layer. The EN-only parsers are gated off per sentence, so Korean yields blocks +
+concepts but no (fabricated) grammar. Full 어미 analysis still needs an opt-in
+KoNLPy/MeCab adapter; some 관형형 (흐르는 → 흐르) slip through.
 
 ## Layout
 
@@ -120,7 +125,7 @@ interface/cli.py   the 10-subcommand bridge (JSON over stdout)
 observer/       stat-poll watcher (stdlib, no watchdog pkg)
 payload.py      JSONL serialization
 grammar.cfg     EN NF2 CFG (CKY)
-test/           27 test files, 347 passed
+test/           27 test files, 424 passed
 plugin/         Obsidian plugin (TS shell + vendored backend/)  →  main.js
 .claude/skills/nl-miner/   the Claude Code skill (SKILL.md)
 docs/           OVERVIEW / ARCHITECTURE / USAGE / DEPLOYMENT

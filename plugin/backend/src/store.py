@@ -47,13 +47,21 @@ MIN_FILES_FOR_IDF = 3
 
 # Cosine below this is coincidence, not relatedness.
 #
-# Calibrated against a real 80-note vault, which offers 2137 possible pairs: at
-# 0.05 you get 715 of them, including "cache ↔ idempotence" bridged by
-# {Restore, fetched, times}; at 0.15 you get 38, and they are the ones a person
-# would actually draw ("canary-deployment ↔ rollout", "graph-theory ↔ dag").
+# First calibrated at 0.15 on a real 80-note English vault, where 0.05 gave 715
+# of 2137 pairs ("cache ↔ idempotence" via {Restore, fetched, times}) and 0.15
+# gave 38 a person would draw. Raised to 0.20 when one-note concepts left the
+# denominator (see GraphStore._idf_ceiling), which lifts every score:
+#
+# * mixed-topic fixture (test_concept_relevance): precision 1.00 at every bar
+#   from 0.10 to 0.35; recall 0.84 at 0.20, 0.89 at 0.15;
+# * a 163-note Korean course vault with 435 links the author drew by hand: of
+#   the pairs scoring 0.20 or more, 82% are already linked, and the 25 that are
+#   not are mostly ones a person would draw. At 0.15 that falls to 67%, and the
+#   extra suggestions are held together by stray verb fragments.
+#
 # Because cosine is length-normalised, one number means the same thing in every
 # vault — a summed-idf threshold could never be portable that way.
-MIN_SCORE = 0.15
+MIN_SCORE = 0.20
 
 # ``[[target]]`` in any of Obsidian's spellings. Cross-*file* link resolution
 # lives here rather than in the linker because ``linker.link`` sees one file at
@@ -485,6 +493,28 @@ class GraphStore:
             return 0.0
         return -math.log(MAX_DF_RATIO)
 
+    @staticmethod
+    def _idf_ceiling(n_files: int) -> float:
+        """Score a concept must stay *below* to count toward relatedness.
+
+        A concept that only one note uses has the highest idf there is, ``ln(n)``
+        — and it can never be shared, so it is never evidence for any pair. Yet
+        left in the vector it inflates that note's magnitude, and cosine divides
+        by it: the score then measures how much one-off vocabulary a note has as
+        much as what it shares. On a Korean vault that vocabulary is mostly
+        inflected verb forms and is about half of every note's weight; two notes
+        sharing 반송파, 진폭 and 변조 scored 0.06 for it.
+
+        So the vectors range over the vocabulary the vault can actually link:
+        concepts in two or more notes. ``idf < ln(n)`` is exactly ``df >= 2``.
+        Below ``MIN_FILES_FOR_IDF`` weights are uniform and the score is plain
+        overlap, which this would turn into 1.0 for any shared word — so nothing
+        is excluded there.
+        """
+        if n_files < MIN_FILES_FOR_IDF:
+            return math.inf
+        return math.log(n_files)
+
     def _relate(
         self,
         ca: dict[str, str],
@@ -492,6 +522,7 @@ class GraphStore:
         idf: dict[str, float],
         floor: float,
         labels: dict[str, str],
+        ceiling: float = math.inf,
     ) -> tuple[list[str], float]:
         """How related two notes are: cosine over idf-weighted concept vectors.
 
@@ -509,8 +540,8 @@ class GraphStore:
         shown for a suggestion should be its rarest word, not whichever sorted
         first alphabetically.
         """
-        a = {k: v for k in ca if (v := idf.get(k, 0.0)) > floor}
-        b = {k: v for k in cb if (v := idf.get(k, 0.0)) > floor}
+        a = {k: v for k in ca if floor < (v := idf.get(k, 0.0)) < ceiling}
+        b = {k: v for k in cb if floor < (v := idf.get(k, 0.0)) < ceiling}
         shared = [k for k in a if k in b]
         if not shared:
             return [], 0.0
@@ -611,13 +642,14 @@ class GraphStore:
         Only *informative* shared concepts count — see :meth:`_concept_idf`.
         Sharing "use" or "note" with another page is not a reason to link it, and
         weighting by document frequency is what separates that from sharing
-        "hemocyanin". Rows rank by summed idf, not by how many words overlap, so
-        one rare term outranks a dozen common ones.
+        "hemocyanin". Rows rank by cosine over idf-weighted concepts (see
+        :meth:`_relate`), not by how many words overlap, so one rare term
+        outranks a dozen common ones.
 
         Returns one row per candidate note, strongest first::
 
-            {"file_uuid", "name", "shared": ["문어", "지능"], "n_shared": 2,
-             "score": 1.83}
+            {"file_uuid", "name", "link", "shared": ["문어", "지능"],
+             "n_shared": 2, "score": 0.31}
         """
         by_file = self._concepts_by_file()
         mine = by_file.get(file_uuid, {})
@@ -625,6 +657,7 @@ class GraphStore:
             return []
         idf = self._concept_idf(by_file)
         floor = self._idf_floor(len(by_file))
+        ceiling = self._idf_ceiling(len(by_file))
         linked = self._linked_pairs()
         with self._lock:
             names = dict(
@@ -639,7 +672,7 @@ class GraphStore:
             # Label each shared concept with *this* note's spelling: the reader
             # is looking at this note, so showing the other note's inflection
             # ("tools" when they wrote "tool") reads like a different word.
-            shared, score = self._relate(mine, concepts, idf, floor, mine)
+            shared, score = self._relate(mine, concepts, idf, floor, mine, ceiling)
             if len(shared) < min_shared or score < min_score:
                 continue
             other_name = names.get(other, "?")
@@ -775,6 +808,7 @@ class GraphStore:
         # every word there look rare.
         idf = self._concept_idf(by_file)
         floor = self._idf_floor(len(by_file))
+        ceiling = self._idf_ceiling(len(by_file))
         bridges: list[dict] = []
         seen: set[frozenset[str]] = set()
         for a in keep:
@@ -786,7 +820,7 @@ class GraphStore:
                     continue
                 seen.add(pair)
                 ca, cb = by_file.get(a, {}), by_file.get(b, {})
-                shared, score = self._relate(ca, cb, idf, floor, ca)
+                shared, score = self._relate(ca, cb, idf, floor, ca, ceiling)
                 if len(shared) < min_shared or score < min_score:
                     continue
                 bridges.append({"a": a, "b": b, "shared": shared,
@@ -816,6 +850,7 @@ class GraphStore:
         by_file = self._concepts_by_file()
         idf = self._concept_idf(by_file)
         floor = self._idf_floor(len(by_file))
+        ceiling = self._idf_ceiling(len(by_file))
         linked = self._linked_pairs()
         with self._lock:
             files = self.conn.execute(
@@ -834,7 +869,7 @@ class GraphStore:
                     continue
                 seen.add(key)
                 # label from `a` (the pair is ordered a < b, so this is stable)
-                shared, score = self._relate(ca, cb, idf, floor, ca)
+                shared, score = self._relate(ca, cb, idf, floor, ca, ceiling)
                 if len(shared) < min_shared or score < min_score:
                     continue
                 a_name, b_name = names.get(a, "?"), names.get(b, "?")
@@ -870,7 +905,7 @@ class GraphStore:
         ``(node_id, kind, label)`` — the tag is baked into the canonical id and
         not recoverable — so this matches on the surface form.
         """
-        from .adapters_ko import JOSA, STOP_KO
+        from .adapters_ko import JOSA, STOP_KO, HANGUL_RE, is_verb_form
         from .postagger import _LEXICON
 
         w = label.strip()
@@ -886,8 +921,10 @@ class GraphStore:
         # Path, shell and markup punctuation *inside* a token means it isn't a
         # word. TOKEN_STRIP only trims the ends, so `[ARCHITECTURE.md](…)` still
         # yields `md](ARCHITECTURE`, which starts with a letter and would
-        # otherwise sail through.
-        if any(ch in w for ch in "/\\=$@%^&+()[]{}<>|"):
+        # otherwise sail through. Quotes and emphasis marks inside a token are
+        # the same leftover markup (`두는가"다` from `"두는가"다`), and a
+        # tilde is a range (`F0~F5`), not a word.
+        if any(ch in w for ch in "/\\=$@%^&+()[]{}<>|\"*`“”'’~"):
             return False
         # bare numbers ("1", "2") bridge notes without meaning anything
         if w.isdigit():
@@ -901,6 +938,11 @@ class GraphStore:
         if w.lower() in _LEXICON:      # EN determiners, prepositions, pronouns…
             return False
         if w in JOSA or w in STOP_KO:  # KO particles + closed-class words
+            return False
+        # A Korean verb form is not a concept. The KO adapter tags these VV, but
+        # the tag is not recoverable here, so the adapter is asked again — which
+        # also keeps a store indexed before it knew them clean.
+        if HANGUL_RE.search(w) and is_verb_form(w):
             return False
         return True
 
